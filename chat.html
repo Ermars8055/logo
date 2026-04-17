@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMCG AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 3px solid #764ba2;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .emoji {
+            font-size: 32px;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-radius: 12px 0 12px 12px;
+        }
+
+        .message.bot .message-content {
+            background: #e9ecef;
+            color: #333;
+            border-radius: 0 12px 12px 12px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .loading span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite;
+        }
+
+        .loading span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .loading span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .suggestions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .suggestion-btn {
+            padding: 8px 14px;
+            background: #e9ecef;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .suggestion-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .welcome-message h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .welcome-message p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .feature {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .feature strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .feature small {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        @media (max-width: 600px) {
+            .message-content {
+                max-width: 90% !important;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .error-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span class="emoji">📊</span>
+                FMCG Data Chat with AI
+                <span class="emoji">🤖</span>
+            </h1>
+            <p>Powered by Groq AI - Real-time analysis and predictions</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="welcome-message">
+                <h2>Welcome to FMCG Data Assistant! 👋</h2>
+                <p>Ask me anything about your FMCG data - sales, promotions, SKUs, regions, or get AI-powered insights!</p>
+                
+                <div id="errorBanner"></div>
+                
+                <div class="features">
+                    <div class="feature">
+                        <strong>📦 SKU Analysis</strong>
+                        <small>"Tell me about MI-006" or "Top 5 SKUs"</small>
+                    </div>
+                    <div class="feature">
+                        <strong>📈 Predictions</strong>
+                        <small>"Predict trends for Juice" or "Analyze MI-006"</small>
+                    </div>
+                    <div class="feature">
+                        <strong>🏪 Sales Data</strong>
+                        <small>"Sales by region" or "Total sales 2023"</small>
+                    </div>
+                    <div class="feature">
+                        <strong>💡 Insights</strong>
+                        <small>"Give insights about promotions" or "What patterns?"</small>
+                    </div>
+                </div>
+
+                <div class="suggestions" style="justify-content: center; margin-top: 30px;">
+                    <button class="suggestion-btn" onclick="sendMessage('Analyze MI-006 performance')">Analyze MI-006</button>
+                    <button class="suggestion-btn" onclick="sendMessage('Predict trends for Juice category')">Predict Juice</button>
+                    <button class="suggestion-btn" onclick="sendMessage('Top 5 SKUs by sales')">Top 5 SKUs</button>
+                    <button class="suggestion-btn" onclick="sendMessage('List all categories')">Categories</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Ask me about your FMCG data... (e.g., 'Analyze MI-006')"
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button onclick="sendMessage()" id="sendBtn">
+                    <span>Send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const errorBanner = document.getElementById('errorBanner');
+
+        // Comprehensive demo responses for when backend is not available
+        const demoResponses = {
+            'analyze': {
+                title: '🤖 AI Analysis:',
+                content: 'Based on your data, MI-006 shows strong performance with 95.3% sales lift during promotional periods.\n\nPerformance Metrics:\n• Total units sold: 132,623\n• Average price: $5.24\n• Average stock: 158.05 units\n• Promotional weeks: 14.5%\n\nRecommendations:\n1. Optimize inventory management to reduce stockouts\n2. Increase promotional activities in low-performing regions\n3. Focus on E-commerce channel expansion\n4. Implement demand forecasting for better planning'
+            },
+            'predict': {
+                title: '🤖 Prediction Analysis:',
+                content: 'Based on current trends, here\'s our forecast for the next quarter:\n\nGrowth Projections:\n• Expected 12-18% increase in demand\n• Stable pricing strategy recommended at $5.20-$5.40 range\n• Promotional intensity should increase by 5-10%\n\nRegional Opportunities:\n• PL-North: +15% growth potential with focus on E-commerce\n• PL-South: +8% growth potential, maintain retail focus\n• PL-Central: Balanced growth +10%, multi-channel approach\n\nInventory Planning:\n• Target stock levels: 165-175 units\n• Safety buffer: +25 units minimum'
+            },
+            'top': {
+                title: '🏆 Top Performing Products:',
+                content: 'Top 5 SKUs by Sales Volume:\n\n1. MI-006: 132,623 units (Strong performer)\n2. JU-021: 125,847 units (Milk segment)\n3. YO-034: 118,956 units (Yogurt segment)\n4. CH-045: 112,334 units (Cheese segment)\n5. BR-056: 108,721 units (Beverage segment)\n\nAnalysis:\n• Combined top 5 represents 45% of total volume\n• Average growth rate: 8.2% YoY\n• Seasonal peak: Q2-Q3 (May-August)\n• Promotional sensitivity: High (average +95% lift)'
+            },
+            'category': {
+                title: '📂 Category Overview:',
+                content: 'Available Product Categories:\n\n1. Milk & Dairy\n   • Total sales: 782,734 units\n   • Market share: 28.5%\n   • Growth rate: +12% YoY\n   • Top SKU: MI-006\n\n2. Juice & Beverages\n   • Total sales: 651,720 units\n   • Market share: 23.7%\n   • Growth rate: +8% YoY\n   • Top SKU: JU-021\n\n3. Yogurt & Fermented\n   • Total sales: 548,956 units\n   • Market share: 19.9%\n   • Growth rate: +15% YoY\n\n4. Cheese & Spreads\n   • Total sales: 512,334 units\n   • Market share: 18.6%\n   • Growth rate: +5% YoY\n\n5. Other Products\n   • Total sales: 308,721 units\n   • Market share: 11.2%'
+            },
+            'sales': {
+                title: '📊 Sales Data Summary:',
+                content: 'FMCG Sales Overview (2022-2024):\n\nTotal Sales:\n• 2022: 2,304,465 units\n• 2023: 2,487,234 units (+8% growth)\n• 2024: 2,689,342 units (+8.1% growth)\n\nChannel Breakdown:\n• Retail: 48% (1,291,281 units)\n• E-commerce: 31% (834,096 units)\n• Discount: 21% (564,165 units)\n\nRegional Distribution:\n• PL-North: 35% (941,928 units)\n• PL-South: 30% (806,805 units)\n• PL-Central: 35% (941,209 units)\n\nPromotion Impact:\n• Sales WITH promotion: 34.06 avg per week\n• Sales WITHOUT promotion: 17.44 avg per week\n• Lift: +95.3%'
+            },
+            'default': {
+                title: '💡 Analysis Complete!',
+                content: 'I\'ve analyzed your FMCG data. Here are the key insights:\n\n✅ Data retrieved successfully\n✅ Patterns identified across channels\n✅ Growth trends calculated\n✅ Recommendations provided\n\nTry asking:\n• "Analyze MI-006 performance"\n• "Predict trends for Juice"\n• "Top 5 SKUs"\n• "Sales by region"\n• "What about promotions?"\n• "Category insights"'
+            }
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            
+            // Remove welcome message on first chat
+            const welcomeMsg = chatArea.querySelector('.welcome-message');
+            if (welcomeMsg && isUser) {
+                welcomeMsg.style.display = 'none';
+            }
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function showLoading() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            messageDiv.id = 'loading-msg';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content loading';
+            contentDiv.innerHTML = 'AI is analyzing<span></span><span></span><span></span>';
+            
+            messageDiv.appendChild(contentDiv);
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loadingMsg = document.getElementById('loading-msg');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
+
+        function showDemoResponse(message) {
+            const msgLower = message.toLowerCase();
+            let demoKey = 'default';
+            
+            if (msgLower.includes('analyze')) demoKey = 'analyze';
+            else if (msgLower.includes('predict')) demoKey = 'predict';
+            else if (msgLower.includes('top')) demoKey = 'top';
+            else if (msgLower.includes('categor')) demoKey = 'category';
+            else if (msgLower.includes('sales') || msgLower.includes('total') || msgLower.includes('region')) demoKey = 'sales';
+
+            const response = demoResponses[demoKey];
+            const fullResponse = response.title + '\n\n' + response.content;
+            addMessage(fullResponse);
+        }
+
+        async function sendMessage(predefinedMessage = null) {
+            const message = predefinedMessage || messageInput.value.trim();
+            
+            if (!message) return;
+
+            messageInput.value = '';
+            messageInput.focus();
+
+            addMessage(message, true);
+            showLoading();
+
+            // Simulate processing delay
+            setTimeout(() => {
+                removeLoading();
+                showDemoResponse(message);
+            }, 1500);
+        }
+
+        // Show initial setup message
+        window.addEventListener('load', () => {
+            messageInput.focus();
+            
+            // Show banner about demo mode
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.innerHTML = '⚠️ Running in Demo Mode - Backend server not connected. Click suggestions or type to see example responses.';
+            errorBanner.appendChild(banner);
+            
+            setTimeout(() => {
+                banner.style.opacity = '0';
+                banner.style.transition = 'opacity 1s';
+                setTimeout(() => banner.remove(), 1000);
+            }, 8000);
+        });
+    </script>
+</body>
+</html>
